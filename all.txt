@@ -1,0 +1,622 @@
+void best_fit(vector<block> mem,int process_size,int p_id){
+	int b_index=-1;
+	int b_size=INT_MAX;
+
+	for(int i=0;i<mem.size();i++){
+		if(!mem[i].allocated && mem[i].size>=process_size){
+			if(mem[i].size<b_size){     //dhyan rakhna h 
+				b_size=mem[i].size;
+				b_index=i;
+			}
+		}
+	}
+
+	if(b_index!=-1){
+		mem[b_index].allocated=true;
+		mem[b_index].size_alloc=process_size;
+	}
+	else{
+		cout<<"Memory cannot be allocated"<<endl;
+	}
+}
+
+
+void worst_fit(vector<block> mem,int process_size,int p_id){
+	int w_index=-1;
+	int w_size=INT_MIN;
+	for(int i=0;i<n;i++){
+		if(!mem[i].allocated && mem[i].size>=process_size){
+			if(mem[i].size>w_size){
+				w_size=mem[i].size;
+				w_index=i;
+			}
+		}
+	}
+	if(w_index!=-1){
+		mem[w_index].allocated=true;
+		mem[w_index].size_alloc=process_size;
+	}
+	else{
+		cout<<"Memory cannot be allocated"<<endl;
+	}
+
+}
+
+void first_fit(vector<block> mem,int process_size,int p_id){
+	
+	for(int i=0;i<n;i++){
+		if(!mem[i].allocated && mem[i].size>=process_size){
+			mem[i].allocated=true;
+			mem[i].size_alloc=process_size;
+			return;
+		}
+	}
+
+	cout<<"Memory cannot be allocated"<<endl;
+
+}
+
+
+void next_fit(vector<block> mem,int process_size,int p_id,int& last_allocated){
+	for(int i=last_allocated;i<n;i++){
+		if(!mem[i].allocated && mem[i].size>=process_size){
+			mem[i].allocated=true;
+			mem[i].size_alloc=process_size;
+			return;
+		}
+	}
+
+	for(int i=0;i<last_allocated;i++){
+		if(!mem[i].allocated && mem[i].size>=process_size){
+			mem[i].allocated=true;
+			mem[i].size_alloc=process_size;
+			return;
+		}
+	}
+
+	cout<<"Memory cannot be allocated"<<endl;
+}
+
+
+
+//fifo
+
+void sort(int n,int at[],int bt[],int pid[]){
+	for(int i=0;i<n;i++){
+		for(int j=0;j<n-i-1;j++){
+			if(at[j]>at[j+1]){
+				swap(at[j],at[j+1]);
+				swap(bt[j],bt[j+1]);
+				swap(pid[j],pid[j+1]);
+			}
+		}
+	}
+}
+
+void find(int n,int at[],int bt[],int ct[],int tat[],int bt[]){
+	ct[0]=at[0]+bt[0];
+	for(int i=1;i<n;i++){
+		if(at[i]>ct[i-1]){
+			ct[i]=at[i]+bt[i];
+		}
+		else{
+			ct[i]=ct[i-1]+bt[i];
+		}
+	}
+
+	for(int i=0;i<n;i++){
+		tat[i]=ct[i]-at[i];
+		wt[i]=tat[i]-bt[i];
+	}
+}
+
+
+\\sjf
+
+void calculate(int n,int at[],int bt[],int ct[],int tat[],int wt[]){
+	int rt[n];
+	for(int i=0;i<n;i++){
+		rt[i]=bt[i];
+	}
+
+	int minm=INT_MAX,t=0,finish_time,shortest=0,complete=0;
+
+	bool chk=false;
+
+	while(complete!=n){
+
+		for(int i=0;i<n;i++){
+			if(at[i]<=t && rt[i]<minm && rt[i]>0){
+				minm=rt[i];
+				shortest=i;
+				chk=true;
+			}
+		}
+
+		if(chk==false){
+			t++;
+			continue;
+		}
+
+		rt[shortest]--;
+		minm=rt[shortest];
+
+		if(minm==0){
+			minm=INT_MAX;
+		}
+
+		if(rt[shortest]==0){
+			complete++;
+			finish_time=t+1;
+			ct[shortest]=t+1;
+			wt[shortest]=finish_time-at[shortest]-bt[shortest];
+
+			if(wt[shortest]<0){
+				wt[shortest]=0;
+			}
+		}
+		t++;
+
+
+	}
+}
+
+//priority
+void calculate(int n,int at[],int bt[],int prt[],int ct[],int tat[],int wt[]){
+    int rt[n];
+    int min_at=INT_MAX;
+    for(int i=0;i<n;i++){
+        rt[i]=bt[i];
+        min_at=min(min_at,at[i]);
+
+    }
+    int complete=0,t=0,maxm=-1;
+    int shortest,finish_time;
+
+    prt[n]=-1;
+    for(t=0;complete!=n;t++){
+        shortest=n;
+        for(int i=0;i<n;i++){
+            if(at[i]<=t && prt[i]>prt[shortest] && rt[i]>0){
+                maxm=prt[i];
+                shortest=i;
+            }
+        }
+
+        t+=rt[shortest]-1;
+        rt[shortest]=-1;
+        complete++;
+        finish_time=t+1;
+        ct[shortest]=finish_time;
+        wt[shortest]=finish_time-at[shortest]-bt[shortest];
+    }
+    
+    for(int i=0;i<n;i++){
+        tat[i]=wt[i]+bt[i];
+    }
+}
+
+
+//round robin
+
+void round(int n,int at[],int bt[],int ct[],int tat[],int wt[]){
+	
+	vector<vector<int>> v;
+	int min_at=INT_MAX;
+	int max_at=INT_MIN;
+
+	for(int i=0;i<n;i++){
+
+		v.push_back({at[i],bt[i]});
+		min_at=min(min_at,at[i]);
+		max_at=max(max_at,at[i]);
+	}
+
+	vector<int> ready_q,g_chart;
+
+	for(int i=0;i<n;i++){
+		if(v[i][0]==min_at){
+			ready_q.push_back(i);
+		}
+	}
+	int current_time=min_at;
+
+	while(true){
+
+		if(ready_q.empty() && current_time>max_at){
+			break;
+		}
+
+		if(ready_q.empty()){
+			current_time+=1;
+
+			for(int i=0;i<n;i++){
+				if(v[i][0]>current_time - qnt && v[i][0]<=current_time){
+					ready_q.push_back(i);
+				}
+			}
+		}
+		else{
+			int current_p=ready_q[0];
+
+			if(v[current_p][1]-qnt>0){
+				v[current_p][1]-=qnt;
+				current_time+=qnt;
+
+				for(int i=0;i<n;i++){
+					if(v[i][0]>current_time - qnt && v[i][0]<=current_time){
+						ready_q.push_back(i);
+					}
+				}
+				ready_q.push_back(current_p);
+				g_chart.push_back(current_p);
+				ready_q.erase(ready_q.begin());
+			}
+			else{
+				
+				current_time+=v[current_p][1];
+				v[current_p][1]=0;
+
+				for(int i=0;i<n;i++){
+					if(v[i][0]>current_time - qnt && v[i][0]<=current_time){
+						ready_q.push_back(i);
+					}
+				}
+				ct[current_p]=current_time;
+				g_chart.push_back(current_p);
+				ready_q.erase(ready_q.begin());
+			}
+		}
+	}
+
+	for(auto i:g_chart){
+		cout<<"P"<<i+1<<" ";
+	}
+	cout<<endl;
+
+	//find tat and wt
+}
+
+
+
+
+bool search(vector<int>& fr,int key){
+	if(fr[i]==key){
+		return true;
+	}
+	return false;
+}
+
+
+//fifo
+void fifo(int pg[],int pn,int fn){
+	
+	vector<int> fr;
+	queue<int> f_q;
+
+	int p_f=0,p_h=0;
+
+	for(int i=0;i<pn;i++){
+	 	int c_p=pg[i];
+
+	 	if(search(fr,c_p)){
+	 		p_h++;
+	 		cout<<"page "<<c_p<<" present in frame . Frame contents are : ";
+	 	}
+	 	else{
+	 		p_f++;
+	 		if(fr.size()<fn){
+	 			fr.push_back(c_p);
+	 			f_q.push(c_p);
+	 		}
+	 		else{
+	 			int r_p=f_q.front();
+	 			f_q.pop();
+	 			fr.erase(fr.remove(fr.begin(),fr.end(),r_p),fr.end());
+	 			fr.push_back(c_p);
+	 			f_q.push(c_p);
+	 			cout<<"page "<<c_p<<" not present in frame . Frame contents are : ";
+	 		}
+	 	}
+
+	 	for(int i=0;i<fr.size();i++){
+	 		cout<<fr[i]<<" ";
+	 	}
+	 	cout<<endl;
+	}
+}
+
+
+
+//lru
+void lru(int pg[],int pn,int fn){
+	
+	unordered_set<int> fr;
+	unordered_map<int,int> index;
+	
+
+	int p_f=0,p_h=0;
+
+	for(int i=0;i<pn;i++){
+	 	int c_p=pg[i];
+
+	 	if(fr.find(pg[i])==fr.end()){
+	 		p_h++;
+	 		cout<<"page "<<c_p<<" present in frame . Frame contents are : ";
+	 		index[pg[i]]=i;
+	 	}
+	 	else{
+	 		p_f++;
+	 		if(fr.size()<fn){
+	 			fr.insert(pg[i]);
+	 		}
+	 		else{
+	 			int lru=INT_MAX,val;
+	 			for(auto it=fr.begin();it!=fr.end();it++){
+	 			    if(index[*it]<lru){
+	 			    	lru=index[*it];
+	 			    	val=*it;
+	 			    }
+	 			}
+	 			fr.erase(val);
+	 			fr.insert(pg[i]);
+
+	 		}
+	 		index[pg[i]]=i;
+	 	}
+
+	 	for (auto it=fr.begin(); it!=fr.end(); it++){
+				cout<<" "<<*it;
+		}
+		cout<<endl;
+	}
+}
+
+
+//optimal
+
+int predict(int pg[],vector<int>& fr,int pn,int index){
+	int res=-1,farthest=index;
+
+	for(int i=0;i<fr.size();i++){
+		int j;
+		for(j=0;j<n;j++){
+			if(fr[i]==pg[j]){
+				if(j>farthest){
+					farthest=j;
+					res=i;
+				}
+				break;
+			}
+		}
+		if(j==pn){
+			return i;
+		}
+	}
+
+	if(res==-1){
+		return 0;
+	}
+	else{
+		return res;
+	}
+}
+void opt(int pg[],int pn,int fn){
+	
+	vector<int> fr;
+	
+
+	int p_f=0,p_h=0;
+
+	for(int i=0;i<pn;i++){
+	 	int c_p=pg[i];
+
+	 	if(search(fr,c_p)){
+	 		p_h++;
+	 		cout<<"page "<<c_p<<" present in frame . Frame contents are : ";
+	 	}
+	 	else{
+	 		p_f++;
+	 		if(fr.size()<fn){
+	 			fr.push_back(c_p);
+	 			
+	 		}
+	 		else{
+	 			int x=predict(pg,fr,pn,i+1);
+	 			fr[x]=pg[i];
+	 		}
+	 	}
+
+	 	for(int i=0;i<fr.size();i++){
+	 		cout<<fr[i]<<" ";
+	 	}
+	 	cout<<endl;
+	}
+}
+
+//dll
+
+cpp
+#include <stdio.h>
+#include "SampleDLL.h"
+JNIEXPORT int JNICALL Java_SampleDLL_add(JNIEnv *env, jobject javaobj, jint num1, jint num2) 
+{
+	return num1+num2;
+}
+// 
+JNIEXPORT jint JNICALL Java_SampleDLL_add
+  (JNIEnv *, jobject, jint, jint);
+
+
+
+
+
+java
+import java.util.Scanner;
+
+public class SampleDLL {
+	static {
+		System.loadLibrary("SampleDLL");
+	}
+
+	public native int add(int num1, int num2);
+
+	public static void main(String args[]) {
+		Scanner scanner = new Scanner(System.in);
+		int num1 = 0, num2 = 0;
+		System.out.println("DLL Example Addition Operation");
+		System.out.print("Enter first number: ");
+		num1 = scanner.nextInt();
+		System.out.print("Enter second number: ");
+		num2 = scanner.nextInt();
+		System.out.println("Result: "+new SampleDLL().add(num1,num2));
+	}
+}
+
+
+Steps to run the code
+
+1. javac SampleDLL.java
+2. javah -jni SampleDLL
+   if error occurs for "class file not found try some ways to solve it with help of internet or change ur pc "
+3. locate jni.h
+   copy any one path from the list of available paths
+4. locate jni_md.h
+   copy any one path from the list of available paths
+5. gcc -o libSampleDLL.so -shared -fPIE -I /usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I /usr/lib/jvm/java-8-openjdk-amd64/include/ -shared SampleDLL.c
+6. java -Djava.library.path='/home/admin/Downloads/sahil_DLL/SPOS/DLL' SampleDLL
+
+NOTE in step 5 replace 
+# /usr/lib/jvm/java-8-openjdk-amd64/include/linux/ with the path copied from step 3 
+# /usr/lib/jvm/java-8-openjdk-amd64/include/ with path copied from step 4
+
+NOTE in step 6 replace
+# /home/admin/Downloads/sahil_DLL/SPOS/DLL with the path of ur directory where ur code files r saved
+
+
+
+
+
+//semaphore
+import java.util.*;
+import java.util.concurrent.Semaphore;
+
+class read_write{
+
+	static Semaphore readlock=new Semaphore(1);
+	static Semaphore writelock=new Semaphore(1);
+
+	static int read_count=0;
+
+	static class Read implements Runnable{
+		@Override
+		public void run(){
+			try{
+				readlock.acquire();
+				read_count++;
+				if(read_count==1){
+					writelock.acquire();
+				}
+				readlock.release();
+
+				System.out.println("thread "+Thread.currentThread().getName()+"is reading");
+				Thread.sleep(1500);
+				System.out.println("thread "+ Thread.currentThread().getName()+"has finished reading");
+
+				readlock.acquire();
+				read_count--;
+				
+				if(read_count==0){
+					writelock.release();
+				}
+				readlock.release();
+
+			}
+			catch(InterruptedException e){
+				System.out.println(e.getMessage());
+			}
+		}
+	}
+
+	static class Write implements Runnable{
+		@Override
+		public void run(){
+			try{
+				writelock.acquire();
+				System.out.println("Thread"+Thread.currentThread().getName()+"is writing");
+				Thread.sleep(2500);
+				System.out.println("Thread"+Thread.currentThread().getName()+"has finished writing");
+				writelock.release();
+			}
+			catch(InterruptedException e){
+				System.out.println(e.getMessage());
+			}
+
+		}
+
+	}
+
+	void fun(){
+		Read read=new Read();
+		Write write=new Write();
+		Scanner sc=new Scanner(System.in);
+		System.out.print("Enter number of process = ");
+		int n=sc.nextInt();
+		System.out.println("Enter 1 for reading and 0 for writing : ");
+		int seq[]=new int[n];
+
+		for(int i=0;i<n;i++){
+			seq[i]=sc.nextInt();
+		}
+
+		Thread pr[]=new Thread[n];
+		for(int i=0;i<n;i++){
+			if(seq[i]==1){
+				pr[i]=new Thread(read);
+				
+				pr[i].setName("Thread "+(i+1));
+				
+			}
+			else if(seq[i]==0){
+				pr[i]=new Thread(write);
+
+				pr[i].setName("Thread "+(i+1));
+				
+
+			}
+		}
+
+		for(int i=0;i<n;i++){
+			pr[i].start();
+		}
+
+		sc.close();
+	}
+
+	public static void main(String args[]){
+		read_write rw=new read_write();
+		rw.fun();
+
+	}
+
+	//  public static void main(String[] args) throws Exception {
+    //     Read read = new Read();
+    //     Write write = new Write();
+    //     Thread t1 = new Thread(read);
+    //     t1.setName("thread1");
+    //     Thread t2 = new Thread(read);
+    //     t2.setName("thread2");
+    //     Thread t3 = new Thread(write);
+    //     t3.setName("thread3");
+    //     Thread t4 = new Thread(read);
+    //     t4.setName("thread4");
+    //     t1.start();
+    //     t3.start();
+    //     t2.start();
+    //     t4.start();
+    // }
+
+}
+
+
+
